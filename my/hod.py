@@ -40,7 +40,7 @@ t_to = datetime.datetime(now.year,now.month,now.day-2,15,29)
 # t_to = datetime.datetime(now.year,now.month,now.day+1,now.hour , now.minute)
 t_from =  t_to - datetime.timedelta(minutes=15)
 
-
+f = open("buy_sats.txt","a")
 
 # t_from = datetime.datetime(now.year, now.month, now.day-1)
 # t_to = datetime.datetime(now.year, now.month, now.day-1, 15, 30)
@@ -104,6 +104,10 @@ def counter_order():
                         if c_ltp < c_9_ma:
                             # kite.place_order(variety = kite.VARIETY_REGULAR , exchange = kite.EXCHANGE_NSE, tradingsymbol = c_name,quantity = -c_quantity, product = kite.PRODUCT_MIS , transaction_type = kite.TRANSACTION_TYPE_SELL, order_type = kite.ORDER_TYPE_MARKET)
                             print("exited order" , c_name , round(datetime.datetime.now(),2))
+
+                            co_o = "exited order " +c_name+" "+str(datetime.datetime.now())+ "\n"
+                            f.write(co_o)
+                            
                             trd_portfolio[i]["bought"] = False
                             c_positions = kite.positions()['net']
 
@@ -184,7 +188,10 @@ def calculate(single_company):
                                 trd_portfolio[inst_of_single_company]["bought"] = True
                                 pickle.dump(trd_portfolio,open("given.pickle","wb"))
 
-                
+                                
+                                b_o = "Bought " +name+" "+str(datetime.datetime.now())+ "\n"
+                                f.write(b_o)   
+
                                 print("#bought  ", name )#, "last low " ,m_l , low_t,"max of heghts , min" ,round(mx_diff,2) , mn_diff , m5_diff)
                                 # lo +=1
                                 # print(d)

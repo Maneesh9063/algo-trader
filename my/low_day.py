@@ -33,6 +33,7 @@ c = ["date", "open", "high", "low", "close"]
 d = pd.DataFrame(columns=c)
 hist = {}
 
+f = open("sell_stats.txt","a")
 
 now = datetime.datetime.now()
 
@@ -105,6 +106,9 @@ def counter_order():
                         if c_ltp > c_9_ma:
                             # kite.place_order(variety = kite.VARIETY_REGULAR , exchange = kite.EXCHANGE_NSE, tradingsymbol = c_name,quantity = -c_quantity, product = kite.PRODUCT_MIS , transaction_type = kite.TRANSACTION_TYPE_BUY, order_type = kite.ORDER_TYPE_MARKET)
                             print("exited order" , c_name , datetime.datetime.now())
+                            co_o = "exited order " +c_name+" "+str(datetime.datetime.now())+ "\n"
+                            f.write(co_o)
+
                             trd_portfolio[i]["sold"] = False
                             c_positions = kite.positions()['net']
 
@@ -182,6 +186,9 @@ def calculate(single_company):
                                 trd_portfolio[inst_of_single_company]["sold"] = True
                                 pickle.dump(trd_portfolio,open("given.pickle","wb"))
 
+                                s_o = "Sold " +name+" "+str(datetime.datetime.now())+ "\n"
+                                f.write(s_o)   
+
                 
                                 print("#sold  ", name )# , "last low " ,m_l , low_t,"max of heghts , min" ,round(mx_diff,2) , mn_diff , m5_diff)
                                 # lo +=1
@@ -221,7 +228,7 @@ def on_ticks(ws, ticks):
 
     t_time = round((time.perf_counter() - t1),2)
     print(t_time)
-    with open("timer.txt","a") as f:
+    with open("timer_sell.txt","a") as f:
         f.write(str(mj)+" = "+str(t_time)+" number of results " + str(lo)+ "\n")
 
 
