@@ -121,7 +121,7 @@ lo = 0
 
 def calculate(single_company):
     try:
-        # global d,lo
+        global d,lo
         inst_of_single_company = single_company['instrument_token']
         name = trd_portfolio[inst_of_single_company]['name']
         # print(single_company,name)
