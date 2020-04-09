@@ -11,7 +11,7 @@ api_sec = "ast8w78hd3wjtinibrx9md80z9yer8nw"
 
 # to be pasted from console....|||
 
-at = "SoBl3q9qX0lYgTxH3CTKGbfALskIwQIg"
+at = "9OhQO96LE6XXe9qNks5bgPRBrsqxcSCE"
 
 kite = KiteConnect(api_key=api_key)
 
@@ -33,12 +33,11 @@ c = ["date", "open", "high", "low", "close"]
 d = pd.DataFrame(columns=c)
 hist = {}
 
-f = open("sell_stats.txt","a")
 
 now = datetime.datetime.now()
 
-t_to = datetime.datetime(now.year,now.month,now.day-2,15,29)
-# t_to = datetime.datetime(now.year,now.month,now.day+1,now.hour , now.minute)
+# t_to = datetime.datetime(now.year,now.month,now.day-2,15,29)
+t_to = datetime.datetime(now.year,now.month,now.day+1,now.hour , now.minute)
 t_from =  t_to - datetime.timedelta(minutes=15)
 
 
@@ -82,9 +81,9 @@ def counter_order():
 
             if len(c_positions) > 0:
                 n = datetime.datetime.now()
-                c_to = datetime.datetime(n.year, n.month, n.day,n.hour,n.minute)
+                c_to = datetime.datetime(n.year, n.month, n.day-1,n.hour,n.minute)
                 c_from =  c_to -datetime.timedelta(minutes=15)
-                print("-----------------------------------------------")
+                # print("-----------------------------------------------")
                 for count,j in enumerate(c_positions):
                     c_quantity = c_positions[count]["quantity"]
                     if c_quantity < 0 and j["product"] == "MIS":
@@ -94,20 +93,21 @@ def counter_order():
                         # print(c_from)
                         # print(c_to) 
                         # print(c_df)
-                        c_9_ma = round(c_df["close"][-9:].mean(),2)
+                        c_9_ma = c_df["close"][-9:].mean()
                         # c_ltp = kite.ltp(["NSE:"+trd_portfolio[i]['name']])
                         c_name = trd_portfolio[i]['name']
                         # c_positions = kite.positions()['net']
                         # if j["tradingsymbol"] == c_name :
                             
                         c_ltp = c_positions[count]["last_price"]
-                        print(c_name ,c_ltp, c_9_ma ,c_quantity)
+                        # print(c_name ,c_ltp, c_9_ma ,c_quantity)
 
                         if c_ltp > c_9_ma:
-                            # kite.place_order(variety = kite.VARIETY_REGULAR , exchange = kite.EXCHANGE_NSE, tradingsymbol = c_name,quantity = -c_quantity, product = kite.PRODUCT_MIS , transaction_type = kite.TRANSACTION_TYPE_BUY, order_type = kite.ORDER_TYPE_MARKET)
+                            kite.place_order(variety = kite.VARIETY_REGULAR , exchange = kite.EXCHANGE_NSE, tradingsymbol = c_name,quantity = -c_quantity, product = kite.PRODUCT_MIS , transaction_type = kite.TRANSACTION_TYPE_BUY, order_type = kite.ORDER_TYPE_MARKET)
                             print("exited order" , c_name , datetime.datetime.now())
-                            co_o = "exited order " +c_name+" "+str(datetime.datetime.now())+ "\n"
-                            f.write(co_o)
+                            with open("sell_stats.txt","a") as f:
+                                co_o = "exited order " +c_name+" "+str(datetime.datetime.now())+ "\n"
+                                f.write(co_o)
 
                             trd_portfolio[i]["sold"] = False
                             c_positions = kite.positions()['net']
@@ -117,8 +117,8 @@ def counter_order():
             pass    
         
         time.sleep(1)
-# t = threading.Thread(target=counter_order)
-# t.start()
+t = threading.Thread(target=counter_order)
+t.start()
 
 # the whole calculation work and buying & selling is done here
 lo = 0
@@ -170,7 +170,8 @@ def calculate(single_company):
                         if mx_diff > 2*mn_diff and t1 and not trd_portfolio[inst_of_single_company]["sold"]:
                             
                             print("-----sell signal ", name)
-                            print(d.iloc[-(low_l+1)]["high"] ,d.iloc[-(len(m5_diff)-hi_l)]["high"]-(mx_diff*0.4) ,d.iloc[-(len(m5_diff)-hi_l)]["high"]  , (mx_diff*0.4) )
+
+                            # print(d.iloc[-(low_l+1)]["high"] ,d.iloc[-(len(m5_diff)-hi_l)]["high"]-(mx_diff*0.4) ,d.iloc[-(len(m5_diff)-hi_l)]["high"]  , (mx_diff*0.4) )
 
                             
                             x = 500
@@ -179,18 +180,19 @@ def calculate(single_company):
                             price = price_cal(trigger)
                             
                             try:
-                                # kite.place_order(variety = kite.VARIETY_REGULAR , exchange = kite.EXCHANGE_NSE, tradingsymbol = name,quantity = quantity, product = kite.PRODUCT_MIS , transaction_type = kite.TRANSACTION_TYPE_SELL, order_type = kite.ORDER_TYPE_SL, trigger_price = trigger, price = price)
+                                kite.place_order(variety = kite.VARIETY_REGULAR , exchange = kite.EXCHANGE_NSE, tradingsymbol = name,quantity = quantity, product = kite.PRODUCT_MIS , transaction_type = kite.TRANSACTION_TYPE_SELL, order_type = kite.ORDER_TYPE_SL, trigger_price = trigger, price = price)
 
                                 sold_holdings.append(inst_of_single_company)
                                 pickle.dump(sold_holdings,open("sold.pickle","wb"))
                                 trd_portfolio[inst_of_single_company]["sold"] = True
                                 pickle.dump(trd_portfolio,open("given.pickle","wb"))
 
-                                s_o = "Sold " +name+" "+str(datetime.datetime.now())+ "\n"
-                                f.write(s_o)   
+                                with open("buy_sats.txt","a") as f:
+                                    s_o = "Sold " +name+" "+str(datetime.datetime.now())+ "\n"
+                                    f.write(s_o)     
 
                 
-                                print("#sold  ", name )# , "last low " ,m_l , low_t,"max of heghts , min" ,round(mx_diff,2) , mn_diff , m5_diff)
+                                print("#sold  ", name ,datetime.datetime.now())# , "last low " ,m_l , low_t,"max of heghts , min" ,round(mx_diff,2) , mn_diff , m5_diff)
                                 # lo +=1
                                 # print(d)
                                 # print("last low " ,m_l , low_t ,name)

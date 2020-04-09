@@ -1,7 +1,7 @@
 from kiteconnect import KiteConnect
 from kiteconnect import KiteTicker
 import pandas as pd
-import datetime
+import datetime,random
 import pickle,math,threading
 import time,concurrent.futures
 
@@ -11,7 +11,7 @@ api_sec = "ast8w78hd3wjtinibrx9md80z9yer8nw"
 
 # to be pasted from console....|||
 
-at = "9OhQO96LE6XXe9qNks5bgPRBrsqxcSCE"
+at = "i5UHgbaseY1A60TJZFdl1j4O5AOx6I1O"
 
 kite = KiteConnect(api_key=api_key)
 
@@ -33,7 +33,6 @@ c = ["date", "open", "high", "low", "close"]
 d = pd.DataFrame(columns=c)
 hist = {}
 
-
 now = datetime.datetime.now()
 
 # t_to = datetime.datetime(now.year,now.month,now.day-2,15,29)
@@ -43,8 +42,6 @@ t_from =  t_to - datetime.timedelta(minutes=15)
 
 # t_from = datetime.datetime(now.year, now.month, now.day-1)
 # t_to = datetime.datetime(now.year, now.month, now.day-1, 15, 30)
-
-
 
 for i in trd_portfolio:
     subscribe.append(i)
@@ -98,9 +95,10 @@ def counter_order():
                         # if j["tradingsymbol"] == c_name :
                             
                         c_ltp = c_positions[count]["last_price"]
-                        print(c_name ,c_ltp, c_9_ma ,c_quantity)
 
                         if c_ltp < c_9_ma:
+                            print(c_name ,c_ltp, c_9_ma ,c_quantity)
+
                             kite.place_order(variety = kite.VARIETY_REGULAR , exchange = kite.EXCHANGE_NSE, tradingsymbol = c_name,quantity = c_quantity, product = kite.PRODUCT_MIS , transaction_type = kite.TRANSACTION_TYPE_SELL, order_type = kite.ORDER_TYPE_MARKET)
                             print("exited order" , c_name , datetime.datetime.now())
                             with open("buy_stats.txt","a") as f:
@@ -136,7 +134,7 @@ def calculate(single_company):
         low_t = single_company["ohlc"]["low"]
         close_t = single_company["ohlc"]["close"]
         # print(name)
-        if ltp_t > 50 and ltp_t < 500:
+        if ltp_t > 50 and ltp_t < 1000:
             # print(lo)
             lo += 1
             # print(name)
@@ -150,7 +148,7 @@ def calculate(single_company):
                 d = pd.DataFrame(kite.historical_data(inst_of_single_company, t_from, t_to, "minute"))
                 # print(d)
                 m_l = max(d["high"][-5:])
-                # print("last low " ,m_l , low_t ,name)
+                # print("last low " ,m_l , high_t ,name)
                 if m_l >= high_t:
                     m5_diff = [0]*5
                     ap = 0
@@ -161,7 +159,8 @@ def calculate(single_company):
                     mx_diff = max(m5_diff)
                     hi_l = m5_diff.index(mx_diff)
                     mn_diff = min(m5_diff[hi_l:])
-                    if mn_diff == min(m5_diff):
+                    # print(d.iloc[hi_l]["high"], high_t)
+                    if mn_diff == min(m5_diff) and d.iloc[hi_l]["high"] >= high_t:
                         # print("sell ",name)
                         # print(d)
                         low_l = m5_diff.index(mn_diff)
@@ -201,31 +200,34 @@ def calculate(single_company):
         print("exception occured : " ,e)
 
 
-
+s_len = len(subscribe)
+h ={}
 def on_ticks(ws, ticks):
-    # global from_ , to , d, hist
-    # pol = 0
-    # print(ticks)
     t1 = (time.perf_counter())
-    # counter_order()
-
-    # t_len = len(ticks)
-
+    t_len = len(ticks)
     # print(t_len)
-    mj = 0
+    mj = 15
+    t =[]
+    # random.shuffle(ticks)
     for i in ticks:
-    # for i in range(mj-1,t_len,mj):
-        calculate(i)
-        # print(i)
-        
+        h[i["instrument_token"]] = i
+    if len(h) == s_len:
+        # print(len(h)) 
+        for i in h:
+            t.append(h[i])
+        # for i in h:
+        for i in range(mj-1,t_len,mj):
+            # calculate(h[i])
+            # print(i)
+            with concurrent.futures.ThreadPoolExecutor() as ex:
+                ex.map(calculate ,t[i-mj:i])
         # i = 0
         # while i < mj:
         #     t = threading.Thread(target=calculate, args=([ticks[i]]))
         #     t.start()
         #     i += 1
         
-        # with concurrent.futures.ThreadPoolExecutor() as ex:
-        #     ex.map(calculate ,ticks[i-mj:i])
+        
 
     t_time = round((time.perf_counter() - t1),2)
     print(t_time)
@@ -233,7 +235,7 @@ def on_ticks(ws, ticks):
         f.write(str(mj)+" = "+str(t_time)+" number of results "+str(lo)+ "\n")
         
 
-# subscribe=[1215745]
+# subscribe=[3771393]
 def on_connect(ws, response):
     ws.subscribe(subscribe)
     ws.set_mode(ws.MODE_QUOTE, subscribe)
